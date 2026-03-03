@@ -814,8 +814,14 @@ class K8sOperator(abc.ABC):
         job_list = self.get_jobs(namespace=settings.namespace, label_selector=label_selector)
         for job in job_list.items:
             jobs.append(self._extract_job_info(job))
+            _pod_label = f"chutes/deployment-id={job.metadata.labels.get('chutes/deployment-id')}"
+            _pods = self.get_pods(namespace=job.metadata.namespace, label_selector=_pod_label)
+            _node_name = next(
+                (p.spec.node_name for p in _pods.items if p.spec.node_name), "unknown"
+            )
             logger.info(
-                f"Found chute job: {job.metadata.name} in namespace {job.metadata.namespace}"
+                f"Found chute job: {job.metadata.name} in namespace {job.metadata.namespace} "
+                f"| worker: {_node_name}"
             )
         return jobs
 
